@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="查房笔记"/>
+<meta name="theme-color" content="#0f1114"/>
+<title>查房笔记</title>
+<link rel="manifest" href="manifest.json"/>
+<link rel="apple-touch-icon" href="icon-192.svg"/>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&display=swap');
+
+:root {
+  --bg: #0f1114;
+  --bg2: #181b20;
+  --bg3: #1e2229;
+  --bg4: #252b34;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.13);
+  --text: #e8eaf0;
+  --text2: #8b90a0;
+  --text3: #555b6a;
+  --accent: #4e8fff;
+  --accent-bg: rgba(78,143,255,0.12);
+  --red: #e05c5c;
+  --red-bg: rgba(224,92,92,0.12);
+  --amber: #e0a840;
+  --amber-bg: rgba(224,168,64,0.12);
+  --green: #4caf7d;
+  --green-bg: rgba(76,175,125,0.12);
+  --radius: 14px;
+  --radius-sm: 9px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  font-size: 15px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+body {
+  font-family: 'Noto Sans SC', 'PingFang SC', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+/* ── Layout ── */
+.app-wrap {
+  max-width: 430px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.status-bar-fill {
+  height: var(--safe-top);
+  background: var(--bg);
+}
+
+/* ── Header ── */
+.app-header {
+  padding: 14px 18px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg);
+  border-bottom: 0.5px solid var(--border);
+  position: sticky;
+  top: var(--safe-top);
+  z-index: 50;
+}
+.app-logo {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.app-logo-mark {
+  width: 30px; height: 30px;
+  background: var(--accent);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+}
+.app-logo-mark svg { width: 16px; height: 16px; }
+.app-logo-name { font-size: 16px; font-weight: 600; letter-spacing: -0.3px; }
+.app-logo-sub { font-size: 11px; color: var(--text2); margin-top: 1px; }
+.add-bed-btn {
+  display: flex; align-items: center; gap: 5px;
+  padding: 7px 13px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+}
+.add-bed-btn:active { transform: scale(0.96); }
+
+/* ── Tab Bar ── */
+.tab-bar {
+  display: flex;
+  padding: 0 18px;
+  gap: 2px;
+  background: var(--bg);
+  border-bottom: 0.5px solid var(--border);
+}
+.tab-item {
+  flex: 1;
+  padding: 10px 8px;
+  font-size: 12px;
+  text-align: center;
+  color: var(--text2);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s;
+  user-select: none;
+}
+.tab-item.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: 500;
+}
+
+/* ── Stats ── */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 10px;
+  padding: 14px 18px;
+}
+.stat-card {
+  background: var(--bg2);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+}
+.stat-label { font-size: 11px; color: var(--text2); margin-bottom: 5px; }
+.stat-value { font-size: 24px; font-weight: 600; }
+
+/* ── Bed Cards ── */
+.bed-list { padding: 0 18px 120px; }
+
+.bed-card {
+  background: var(--bg2);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 10px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.bed-card.risk-r { border-left: 3px solid var(--red); }
+.bed-card.risk-y { border-left: 3px solid var(--amber); }
+.bed-card.risk-g { border-left: 3px solid var(--green); }
+
+.bed-header {
+  display: flex; align-items: center; gap: 11px;
+  padding: 13px 15px;
+  cursor: pointer;
+  user-select: none;
+}
+.bed-avatar {
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 600;
+  flex-shrink: 0;
+}
+.avatar-r { background: var(--red-bg); color: var(--red); }
+.avatar-y { background: var(--amber-bg); color: var(--amber); }
+.avatar-g { background: var(--green-bg); color: var(--green); }
+
+.bed-meta { flex: 1; min-width: 0; }
+.bed-name-row { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.bed-num { font-size: 11px; color: var(--text2); }
+.bed-name { font-size: 15px; font-weight: 600; }
+.bed-info-row { font-size: 12px; color: var(--text2); margin-top: 3px; display: flex; gap: 8px; flex-wrap: wrap; }
+.day-badge {
+  font-size: 11px; font-weight: 600;
+  background: var(--accent-bg); color: var(--accent);
+  padding: 2px 7px; border-radius: 20px;
+}
+.chevron-btn {
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg3); border-radius: 8px;
+  flex-shrink: 0;
+  transition: transform 0.2s;
+}
+.chevron-btn.open { transform: rotate(90deg); }
+.chevron-btn svg { width: 14px; height: 14px; }
+
+/* ── Today Section ── */
+.bed-today {
+  padding: 0 15px 13px;
+  border-top: 0.5px solid var(--border);
+}
+.section-mini-label {
+  font-size: 10px; font-weight: 600;
+  color: var(--text3);
+  text-transform: uppercase; letter-spacing: 0.08em;
+  margin: 11px 0 6px;
+}
+.remark-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--amber-bg); color: var(--amber);
+  font-size: 11px; padding: 3px 9px;
+  border-radius: 20px; margin-bottom: 8px;
+}
+.today-condition {
+  font-size: 13px; line-height: 1.65;
+  color: var(--text);
+}
+.order-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+.order-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: var(--amber-bg); color: var(--amber);
+  font-size: 11px; padding: 3px 9px;
+  border-radius: 20px; cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  user-select: none;
+}
+.order-chip.done {
+  background: var(--green-bg); color: var(--green);
+  text-decoration: line-through; opacity: 0.75;
+}
+.bed-actions { display: flex; gap: 7px; margin-top: 11px; flex-wrap: wrap; }
+.action-btn {
+  padding: 6px 12px; font-size: 12px; font-weight: 500;
+  border: 0.5px solid var(--border2);
+  border-radius: var(--radius-sm);
+  background: var(--bg3); color: var(--text);
+  cursor: pointer; font-family: inherit;
+  transition: background 0.15s;
+}
+.action-btn:active { background: var(--bg4); }
+.action-btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.action-btn.primary:active { opacity: 0.85; }
+.empty-today {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 4px 0;
+}
+.empty-today-text { font-size: 13px; color: var(--text3); }
+
+/* ── Timeline ── */
+.tl-section { display: none; border-top: 0.5px solid var(--border); }
+.tl-section.open { display: block; }
+.tl-inner-label {
+  font-size: 10px; font-weight: 600; color: var(--text3);
+  text-transform: uppercase; letter-spacing: 0.08em;
+  padding: 10px 15px 4px;
+}
+.tl-entry { display: flex; gap: 10px; padding: 10px 15px; border-bottom: 0.5px solid var(--border); }
+.tl-entry:last-child { border-bottom: none; }
+.tl-left { width: 42px; flex-shrink: 0; text-align: center; }
+.tl-day { font-size: 12px; font-weight: 600; }
+.tl-date { font-size: 10px; color: var(--text3); margin-top: 1px; }
+.tl-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border2); margin: 5px auto 0; }
+.tl-dot.today { background: var(--accent); }
+.tl-content { flex: 1; min-width: 0; }
+.tl-time { font-size: 11px; color: var(--text3); margin-bottom: 3px; }
+.tl-text { font-size: 13px; line-height: 1.6; color: var(--text); white-space: pre-wrap; }
+.tl-orders { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.tl-actions { display: flex; gap: 7px; padding: 10px 15px; border-top: 0.5px solid var(--border); }
+.tl-add-row {
+  display: flex; align-items: center; gap: 7px;
+  padding: 9px 15px; font-size: 12px; color: var(--text2);
+  cursor: pointer; border-top: 0.5px solid var(--border);
+  background: transparent; border-left: none; border-right: none; border-bottom: none;
+  width: 100%; font-family: inherit;
+}
+
+/* ── Export Tab ── */
+.export-list { padding: 0 18px 120px; }
+.export-card {
+  background: var(--bg2); border: 0.5px solid var(--border);
+  border-radius: var(--radius); padding: 14px 16px;
+  margin-bottom: 10px; cursor: pointer;
+  transition: border-color 0.15s;
+}
+.export-card:active { border-color: var(--border2); }
+.export-card-top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.export-card-name { font-size: 14px; font-weight: 600; }
+.export-card-meta { font-size: 12px; color: var(--text2); }
+.export-card-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 7px; }
+.export-section-label {
+  font-size: 11px; color: var(--text2);
+  text-transform: uppercase; letter-spacing: 0.06em;
+  padding: 10px 18px 4px;
+}
+.no-record-card {
+  background: var(--bg2); border: 0.5px solid var(--border);
+  border-radius: var(--radius); padding: 12px 15px;
+  margin-bottom: 8px; display: flex; align-items: center; gap: 10px;
+}
+.no-record-info { flex: 1; }
+.no-record-name { font-size: 14px; font-weight: 500; margin-bottom: 2px; }
+.no-record-sub { font-size: 12px; color: var(--text2); }
+
+/* ── Tags ── */
+.tag {
+  display: inline-block; font-size: 11px; font-weight: 500;
+  padding: 2px 8px; border-radius: 20px;
+}
+.tag-r { background: var(--red-bg); color: var(--red); }
+.tag-y { background: var(--amber-bg); color: var(--amber); }
+.tag-g { background: var(--green-bg); color: var(--green); }
+.tag-b { background: var(--accent-bg); color: var(--accent); }
+.tag-gray { background: var(--bg3); color: var(--text2); }
+
+/* ── Modal ── */
+.modal-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 200;
+  align-items: flex-end;
+  justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal-sheet {
+  background: var(--bg2);
+  border-radius: var(--radius) var(--radius) 0 0;
+  width: 100%; max-width: 430px;
+  max-height: 92dvh;
+  overflow-y: auto;
+  padding: 0 0 calc(16px + var(--safe-bottom));
+}
+.modal-handle {
+  width: 36px; height: 4px;
+  background: var(--border2); border-radius: 2px;
+  margin: 10px auto 0;
+}
+.modal-hd {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px 10px;
+  border-bottom: 0.5px solid var(--border);
+}
+.modal-title { font-size: 16px; font-weight: 600; }
+.modal-close {
+  width: 28px; height: 28px;
+  background: var(--bg3); border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--text2); font-size: 16px;
+  border: none; font-family: inherit;
+}
+.modal-body { padding: 16px 18px; }
+.form-row { margin-bottom: 13px; }
+.form-label { font-size: 12px; color: var(--text2); margin-bottom: 5px; }
+.form-input, .form-select, .form-textarea {
+  width: 100%; padding: 10px 12px;
+  background: var(--bg3); color: var(--text);
+  border: 0.5px solid var(--border2);
+  border-radius: var(--radius-sm);
+  font-size: 14px; font-family: inherit;
+  outline: none;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: var(--accent);
+}
+.form-textarea { resize: none; line-height: 1.55; }
+.form-textarea::placeholder, .form-input::placeholder { color: var(--text3); }
+.form-date-row { display: flex; gap: 8px; }
+.form-date-row .form-input { flex: 1; }
+.form-date-row .form-input.time-input { width: 80px; flex: none; }
+.form-hint { font-size: 11px; color: var(--text3); margin-top: 4px; }
+.form-btn {
+  width: 100%; padding: 13px;
+  background: var(--accent); color: #fff;
+  border: none; border-radius: var(--radius-sm);
+  font-size: 15px; font-weight: 600; font-family: inherit;
+  cursor: pointer; margin-bottom: 8px;
+}
+.form-btn:active { opacity: 0.85; }
+.form-btn.danger { background: var(--red-bg); color: var(--red); }
+
+/* ── Export Detail Modal ── */
+.export-section { padding: 14px 18px; border-bottom: 0.5px solid var(--border); }
+.export-section-title {
+  font-size: 11px; font-weight: 600; color: var(--text3);
+  text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px;
+}
+.export-progress-box {
+  background: var(--bg3); border-radius: var(--radius-sm);
+  padding: 13px; font-size: 13px; line-height: 1.7;
+  color: var(--text); white-space: pre-wrap;
+}
+.copy-btn {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  width: 100%; padding: 10px;
+  background: var(--bg3); color: var(--text);
+  border: 0.5px solid var(--border2);
+  border-radius: var(--radius-sm); font-size: 13px;
+  cursor: pointer; font-family: inherit; margin-top: 10px;
+}
+.copy-btn:active { background: var(--bg4); }
+.order-check-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 0; border-bottom: 0.5px solid var(--border);
+}
+.order-check-row:last-child { border-bottom: none; }
+.check-box {
+  width: 20px; height: 20px; flex-shrink: 0;
+  border: 1.5px solid var(--border2); border-radius: 6px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.check-box.checked { background: var(--green); border-color: var(--green); }
+.check-icon { width: 11px; height: 11px; opacity: 0; transition: opacity 0.1s; }
+.check-box.checked .check-icon { opacity: 1; }
+.order-text-label { flex: 1; font-size: 13px; }
+.order-text-label.done { text-decoration: line-through; color: var(--text3); }
+
+/* ── Empty ── */
+.empty-state { text-align: center; padding: 40px 20px; color: var(--text3); font-size: 14px; }
+.empty-icon { font-size: 32px; margin-bottom: 10px; opacity: 0.4; }
+</style>
+</head>
+<body>
+<div class="app-wrap">
+  <div class="status-bar-fill"></div>
+
+  <header class="app-header">
+    <div class="app-logo">
+      <div class="app-logo-mark">
+        <svg viewBox="0 0 16 16" fill="none">
+          <rect x="2" y="2" width="5" height="5" rx="1.5" fill="white" opacity="0.9"/>
+          <rect x="9" y="2" width="5" height="5" rx="1.5" fill="white" opacity="0.6"/>
+          <rect x="2" y="9" width="5" height="5" rx="1.5" fill="white" opacity="0.6"/>
+          <rect x="9" y="9" width="5" height="5" rx="1.5" fill="white" opacity="0.9"/>
+        </svg>
+      </div>
+      <div>
+        <div class="app-logo-name">查房笔记</div>
+        <div class="app-logo-sub">上海市精神卫生中心</div>
+      </div>
+    </div>
+    <button class="add-bed-btn" onclick="openAddBed()">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+        <path d="M6.5 1v11M1 6.5h11" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+      新增患者
+    </button>
+  </header>
+
+  <div class="tab-bar">
+    <div class="tab-item active" onclick="showTab('beds',this)">床位管理</div>
+    <div class="tab-item" onclick="showTab('export',this)">查房导出 <span id="export-badge"></span></div>
+  </div>
+
+  <div id="tab-beds">
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">今日床位</div>
+        <div class="stat-value" id="stat-beds">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">待执行医嘱</div>
+        <div class="stat-value" id="stat-orders">0</div>
+      </div>
+    </div>
+    <div class="bed-list" id="bed-list">
+      <div class="empty-state">
+        <div class="empty-icon">🏥</div>
+        <div>点击右上角「新增患者」开始管理床位</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-export" style="display:none;">
+    <div class="export-list" id="export-list"></div>
+  </div>
+</div>
+
+<!-- MODAL: 查房笔记 -->
+<div class="modal-overlay" id="m-note">
+<div class="modal-sheet">
+  <div class="modal-handle"></div>
+  <div class="modal-hd">
+    <span class="modal-title" id="note-title">查房笔记</span>
+    <button class="modal-close" onclick="closeModal('m-note')">×</button>
+  </div>
+  <div class="modal-body">
+    <div class="form-row">
+      <div class="form-label">日期 / 时间</div>
+      <div class="form-date-row">
+        <input class="form-input" type="date" id="n-date"/>
+        <input class="form-input time-input" type="text" id="n-time" placeholder="09:30"/>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-label">病情变化</div>
+      <textarea class="form-textarea" id="n-condition" rows="5" placeholder="情绪、睡眠、饮食、主诉变化、消极观念、上级指示…"></textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-label">医嘱修改</div>
+      <textarea class="form-textarea" id="n-orders-raw" rows="3" placeholder="每条单独一行，如：&#10;舍曲林加量至150mg&#10;复查肝功能"></textarea>
+      <div class="form-hint">保存后可在卡片上逐条勾选已执行</div>
+    </div>
+    <button class="form-btn" onclick="saveNote()">保存笔记</button>
+  </div>
+</div>
+</div>
+
+<!-- MODAL: 新增患者 -->
+<div class="modal-overlay" id="m-add-bed">
+<div class="modal-sheet">
+  <div class="modal-handle"></div>
+  <div class="modal-hd">
+    <span class="modal-title">新增患者</span>
+    <button class="modal-close" onclick="closeModal('m-add-bed')">×</button>
+  </div>
+  <div class="modal-body">
+    <div class="form-row"><div class="form-label">床号</div><input class="form-input" type="text" id="nb-num" placeholder="如 12"/></div>
+    <div class="form-row"><div class="form-label">姓氏</div><input class="form-input" type="text" id="nb-name" placeholder="如 张某"/></div>
+    <div class="form-row"><div class="form-label">诊断</div>
+      <select class="form-select" id="nb-diag">
+        <option>抑郁发作</option><option>焦虑障碍</option><option>双相障碍</option><option>强迫障碍</option><option>其他</option>
+      </select>
+    </div>
+    <div class="form-row"><div class="form-label">入院日期</div><input class="form-input" type="date" id="nb-date"/></div>
+    <div class="form-row"><div class="form-label">风险等级</div>
+      <select class="form-select" id="nb-risk">
+        <option value="r">🔴 重点关注（新入院 / 消极观念 / 药物调整）</option>
+        <option value="y" selected>🟡 常规随访</option>
+        <option value="g">🟢 维护观察（稳定 / 准备出院）</option>
+      </select>
+    </div>
+    <div class="form-row"><div class="form-label">特殊备注</div>
+      <textarea class="form-textarea" id="nb-remark" rows="2" placeholder="过敏史、家庭情况等（可选）"></textarea>
+    </div>
+    <button class="form-btn" onclick="addBed()">保存</button>
+  </div>
+</div>
+</div>
+
+<!-- MODAL: 编辑患者 -->
+<div class="modal-overlay" id="m-edit-bed">
+<div class="modal-sheet">
+  <div class="modal-handle"></div>
+  <div class="modal-hd">
+    <span class="modal-title" id="edit-bed-title">编辑患者</span>
+    <button class="modal-close" onclick="closeModal('m-edit-bed')">×</button>
+  </div>
+  <div class="modal-body" id="edit-bed-body"></div>
+</div>
+</div>
+
+<!-- MODAL: 导出病程 -->
+<div class="modal-overlay" id="m-export">
+<div class="modal-sheet">
+  <div class="modal-handle"></div>
+  <div class="modal-hd">
+    <span class="modal-title" id="exp-title">病程导出</span>
+    <button class="modal-close" onclick="closeModal('m-export')">×</button>
+  </div>
+  <div class="export-section">
+    <div class="export-section-title">病程记录（可复制至 HIS）</div>
+    <div class="export-progress-box" id="exp-progress-box"></div>
+    <button class="copy-btn" onclick="copyProgress()">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <rect x="1" y="4" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.2"/>
+        <path d="M4 4V2.5A1.5 1.5 0 015.5 1H11.5A1.5 1.5 0 0113 2.5V8.5A1.5 1.5 0 0111.5 10H10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+      </svg>
+      复制病程文本
+    </button>
+  </div>
+  <div class="export-section">
+    <div class="export-section-title">医嘱清单（在 HIS 下达后勾选）</div>
+    <div id="exp-orders-list"></div>
+  </div>
+</div>
+</div>
+
+<script>
+const TODAY = new Date().toISOString().slice(0,10);
+const STORAGE_KEY = 'ward_data_v1';
+
+function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify({beds,expanded:[...expanded]}));}
+function load(){
+  try{
+    const d=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}');
+    if(d.beds) beds=d.beds;
+    if(d.expanded) d.expanded.forEach(id=>expanded.add(id));
+  }catch(e){}
+}
+
+function fmtDate(d){if(!d)return'';const p=d.split('-');return p[1]+'/'+p[2];}
+function dayN(admit,entry){return Math.max(1,Math.round((new Date(entry)-new Date(admit))/864e5)+1);}
+function daysSince(d){return d?Math.max(1,Math.round((new Date(TODAY)-new Date(d))/864e5)+1):1;}
+
+let beds = [];
+let expanded = new Set();
+let noteTarget = {bedId:null, entryId:null};
+let exportBedId = null;
+
+load();
+
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+function showTab(t,el){
+  document.querySelectorAll('.tab-item').forEach(x=>x.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-beds').style.display = t==='beds'?'block':'none';
+  document.getElementById('tab-export').style.display = t==='export'?'block':'none';
+  if(t==='export') renderExport();
+}
+
+function riskCls(r){return{r:'risk-r',y:'risk-y',g:'risk-g'}[r];}
+function riskAvatarCls(r){return{r:'avatar-r',y:'avatar-y',g:'avatar-g'}[r];}
+function riskLabel(r){return{r:'重点关注',y:'常规随访',g:'维护观察'}[r];}
+function riskTagCls(r){return{r:'tag-r',y:'tag-y',g:'tag-g'}[r];}
+
+function totalPending(){
+  let n=0;
+  beds.forEach(b=>b.entries.forEach(e=>e.orders.forEach(o=>{if(!o.done)n++;})));
+  return n;
+}
+
+function updateStats(){
+  document.getElementById('stat-beds').textContent=beds.length;
+  const n=totalPending();
+  document.getElementById('stat-orders').textContent=n;
+  document.getElementById('export-badge').textContent=n>0?`(${n})`:'';
+}
+
+function renderBeds(){
+  const sorted=[...beds].sort((a,b)=>({r:0,y:1,g:2}[a.risk]-{r:0,y:1,g:2}[b.risk]));
+  const el=document.getElementById('bed-list');
+  if(!beds.length){
+    el.innerHTML=`<div class="empty-state"><div class="empty-icon">🏥</div><div>点击右上角「新增患者」开始管理床位</div></div>`;
+    return;
+  }
+  el.innerHTML=sorted.map(b=>{
+    const isOpen=expanded.has(b.id);
+    const today=b.entries.find(e=>e.date===TODAY);
+    const pending=b.entries.reduce((a,e)=>a+e.orders.filter(o=>!o.done).length,0);
+    const initials=b.name.slice(0,1)+'某';
+    const sortedEntries=[...b.entries].sort((a,c)=>a.date>c.date?-1:1);
+
+    const tlRows=sortedEntries.map(e=>{
+      const isToday=e.date===TODAY;
+      const dn=dayN(b.admitDate,e.date);
+      const chips=e.orders.map((o,oi)=>`
+        <span class="order-chip${o.done?' done':''}" onclick="toggleOrder(${b.id},${e.id},${oi},event)">
+          ${o.done?'✓ ':''}${escHtml(o.text)}
+        </span>`).join('');
+      return `<div class="tl-entry">
+        <div class="tl-left">
+          <div class="tl-day" style="${isToday?'color:var(--accent);':''}">${dn}天</div>
+          <div class="tl-date">${fmtDate(e.date)}</div>
+          <div class="tl-dot${isToday?' today':''}"></div>
+        </div>
+        <div class="tl-content">
+          <div class="tl-time">${escHtml(e.time||'')}${isToday?` <span style="color:var(--accent);font-size:10px;font-weight:600;">今日</span>`:''}</div>
+          <div class="tl-text">${escHtml(e.condition)}</div>
+          ${e.orders.length?`<div class="tl-orders">${chips}</div>`:''}
+        </div>
+      </div>`;
+    }).join('');
+
+    const todaySection = today
+      ? `<div class="today-condition">${escHtml(today.condition)}</div>
+         ${today.orders.length?`<div class="order-chips">${today.orders.map((o,oi)=>`<span class="order-chip${o.done?' done':''}" onclick="toggleOrder(${b.id},${today.id},${oi},event)">${o.done?'✓ ':''}${escHtml(o.text)}</span>`).join('')}</div>`:''}
+         <div class="bed-actions">
+           <button class="action-btn" onclick="openNoteEdit(${b.id},${today.id},event)">编辑笔记</button>
+           <button class="action-btn" onclick="openExport(${b.id},event)">导出病程</button>
+         </div>`
+      : `<div class="empty-today">
+           <span class="empty-today-text">今日暂未记录</span>
+           <button class="action-btn primary" onclick="openNoteNew(${b.id},event)">+ 查房笔记</button>
+         </div>`;
+
+    return `<div class="bed-card ${riskCls(b.risk)}">
+      <div class="bed-header" onclick="toggleBed(${b.id})">
+        <div class="bed-avatar ${riskAvatarCls(b.risk)}">${escHtml(initials)}</div>
+        <div class="bed-meta">
+          <div class="bed-name-row">
+            <span class="bed-num">${escHtml(b.num)}床</span>
+            <span class="bed-name">${escHtml(b.name)}</span>
+            ${pending?`<span class="tag tag-y">${pending}条待执行</span>`:''}
+          </div>
+          <div class="bed-info-row">
+            <span>${escHtml(b.diag)}</span>
+            <span class="day-badge">第${daysSince(b.admitDate)}天</span>
+            <span>${fmtDate(b.admitDate)}入院</span>
+          </div>
+        </div>
+        <div class="chevron-btn${isOpen?' open':''}">
+          <svg viewBox="0 0 14 14" fill="none"><path d="M5 11l4-4-4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+      </div>
+
+      <div class="bed-today">
+        ${b.remark?`<div class="remark-pill"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.2"/><path d="M6 5v3M6 3.5v.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>${escHtml(b.remark)}</div>`:''}
+        <div class="section-mini-label">今日病情</div>
+        ${todaySection}
+      </div>
+
+      <div class="tl-section${isOpen?' open':''}">
+        <div class="tl-inner-label">住院病程（${b.entries.length}条）</div>
+        ${tlRows}
+        <button class="tl-add-row" onclick="openNoteNew(${b.id},event)">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.2"/><path d="M7 4v6M4 7h6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          补充历史病程记录
+        </button>
+        <div class="tl-actions">
+          <button class="action-btn" style="flex:1;" onclick="openEditBed(${b.id},event)">编辑信息</button>
+          <button class="action-btn" style="flex:1;color:var(--red);border-color:var(--red-bg);" onclick="deleteBed(${b.id},event)">删除患者</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleBed(id){
+  expanded.has(id)?expanded.delete(id):expanded.add(id);
+  save(); renderBeds();
+}
+
+function escHtml(s){
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function openNoteNew(bedId,e){
+  e&&e.stopPropagation();
+  noteTarget={bedId,entryId:null};
+  const b=beds.find(x=>x.id===bedId);
+  document.getElementById('note-title').textContent=`${b.num}床 ${b.name} — 查房笔记`;
+  document.getElementById('n-date').value=TODAY;
+  document.getElementById('n-time').value='';
+  document.getElementById('n-condition').value='';
+  document.getElementById('n-orders-raw').value='';
+  openModal('m-note');
+}
+function openNoteEdit(bedId,entryId,e){
+  e&&e.stopPropagation();
+  noteTarget={bedId,entryId};
+  const b=beds.find(x=>x.id===bedId);
+  const entry=b.entries.find(x=>x.id===entryId);
+  document.getElementById('note-title').textContent=`${b.num}床 ${b.name} — 编辑笔记`;
+  document.getElementById('n-date').value=entry.date;
+  document.getElementById('n-time').value=entry.time||'';
+  document.getElementById('n-condition').value=entry.condition;
+  document.getElementById('n-orders-raw').value=entry.orders.map(o=>o.text).join('\n');
+  openModal('m-note');
+}
+function saveNote(){
+  const {bedId,entryId}=noteTarget;
+  const b=beds.find(x=>x.id===bedId);
+  const date=document.getElementById('n-date').value||TODAY;
+  const time=document.getElementById('n-time').value.trim();
+  const condition=document.getElementById('n-condition').value.trim();
+  if(!condition)return;
+  const raw=document.getElementById('n-orders-raw').value.trim();
+  const newOrders=raw?raw.split('\n').filter(x=>x.trim()).map(t=>({text:t.trim(),done:false})):[];
+  if(entryId){
+    const entry=b.entries.find(x=>x.id===entryId);
+    const prevDone={};
+    entry.orders.forEach(o=>{if(o.done)prevDone[o.text]=true;});
+    entry.date=date; entry.time=time; entry.condition=condition;
+    entry.orders=newOrders.map(o=>({text:o.text,done:!!prevDone[o.text]}));
+  } else {
+    b.entries.push({id:Date.now(),date,time,condition,orders:newOrders});
+  }
+  closeModal('m-note');
+  save(); renderAll();
+}
+
+function toggleOrder(bedId,entryId,oi,e){
+  e&&e.stopPropagation();
+  const b=beds.find(x=>x.id===bedId);
+  const entry=b.entries.find(x=>x.id===entryId);
+  entry.orders[oi].done=!entry.orders[oi].done;
+  save(); renderAll();
+}
+
+function openAddBed(){
+  document.getElementById('nb-date').value=TODAY;
+  ['nb-num','nb-name','nb-remark'].forEach(id=>document.getElementById(id).value='');
+  openModal('m-add-bed');
+}
+function addBed(){
+  const num=document.getElementById('nb-num').value.trim();
+  const name=document.getElementById('nb-name').value.trim();
+  if(!num||!name)return;
+  beds.push({
+    id:Date.now(), num, name,
+    diag:document.getElementById('nb-diag').value,
+    risk:document.getElementById('nb-risk').value,
+    admitDate:document.getElementById('nb-date').value||TODAY,
+    remark:document.getElementById('nb-remark').value.trim(),
+    entries:[]
+  });
+  closeModal('m-add-bed');
+  save(); renderAll();
+}
+function openEditBed(id,e){
+  e&&e.stopPropagation();
+  const b=beds.find(x=>x.id===id);
+  document.getElementById('edit-bed-title').textContent=`${b.num}床 · ${b.name}`;
+  document.getElementById('edit-bed-body').innerHTML=`
+    <div class="form-row"><div class="form-label">床号</div><input class="form-input" type="text" id="eb-num" value="${escHtml(b.num)}"/></div>
+    <div class="form-row"><div class="form-label">姓氏</div><input class="form-input" type="text" id="eb-name" value="${escHtml(b.name)}"/></div>
+    <div class="form-row"><div class="form-label">诊断</div><select class="form-select" id="eb-diag">${['抑郁发作','焦虑障碍','双相障碍','强迫障碍','其他'].map(o=>`<option ${o===b.diag?'selected':''}>${o}</option>`).join('')}</select></div>
+    <div class="form-row"><div class="form-label">入院日期</div><input class="form-input" type="date" id="eb-date" value="${b.admitDate}"/></div>
+    <div class="form-row"><div class="form-label">风险等级</div><select class="form-select" id="eb-risk">
+      <option value="r" ${b.risk==='r'?'selected':''}>🔴 重点关注</option>
+      <option value="y" ${b.risk==='y'?'selected':''}>🟡 常规随访</option>
+      <option value="g" ${b.risk==='g'?'selected':''}>🟢 维护观察</option>
+    </select></div>
+    <div class="form-row"><div class="form-label">特殊备注</div><textarea class="form-textarea" id="eb-remark" rows="2">${escHtml(b.remark||'')}</textarea></div>
+    <button class="form-btn" onclick="saveEditBed(${id})">保存修改</button>
+    <button class="form-btn danger" onclick="deleteBed(${id},null)">删除患者</button>`;
+  openModal('m-edit-bed');
+}
+function saveEditBed(id){
+  const b=beds.find(x=>x.id===id);
+  b.num=document.getElementById('eb-num').value.trim()||b.num;
+  b.name=document.getElementById('eb-name').value.trim()||b.name;
+  b.diag=document.getElementById('eb-diag').value;
+  b.admitDate=document.getElementById('eb-date').value||b.admitDate;
+  b.risk=document.getElementById('eb-risk').value;
+  b.remark=document.getElementById('eb-remark').value.trim();
+  closeModal('m-edit-bed');
+  save(); renderAll();
+}
+function deleteBed(id,e){
+  e&&e.stopPropagation();
+  if(!confirm('确认删除该患者及所有记录？')) return;
+  beds=beds.filter(b=>b.id!==id);
+  expanded.delete(id);
+  closeModal('m-edit-bed');
+  save(); renderAll();
+}
+
+function openExport(bedId,e){
+  e&&e.stopPropagation();
+  exportBedId=bedId;
+  renderExportModal();
+  openModal('m-export');
+}
+function renderExportModal(){
+  const b=beds.find(x=>x.id===exportBedId);
+  const today=b.entries.find(e=>e.date===TODAY);
+  document.getElementById('exp-title').textContent=`${b.num}床 ${b.name} — 导出`;
+  const dn=today?dayN(b.admitDate,TODAY):daysSince(b.admitDate);
+  const progressText=buildProgressText(b,today,dn);
+  document.getElementById('exp-progress-box').textContent=progressText;
+
+  const allOrders=[];
+  b.entries.forEach(entry=>{
+    entry.orders.forEach((o,oi)=>allOrders.push({entryId:entry.id,oi,text:o.text,done:o.done}));
+  });
+  const ordersEl=document.getElementById('exp-orders-list');
+  if(!allOrders.length){
+    ordersEl.innerHTML='<div style="padding:12px 0;font-size:13px;color:var(--text3);">暂无医嘱记录</div>';
+  } else {
+    ordersEl.innerHTML=allOrders.map(o=>`
+      <div class="order-check-row">
+        <div class="check-box${o.done?' checked':''}" onclick="toggleOrderExport(${exportBedId},${o.entryId},${o.oi})">
+          <svg class="check-icon" viewBox="0 0 11 11" fill="none">
+            <path d="M1.5 5.5l3 3 5-5" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <span class="order-text-label${o.done?' done':''}">${escHtml(o.text)}</span>
+        <span class="tag ${o.done?'tag-g':'tag-y'}">${o.done?'已执行':'待执行'}</span>
+      </div>`).join('');
+  }
+}
+function toggleOrderExport(bedId,entryId,oi){
+  const b=beds.find(x=>x.id===bedId);
+  const entry=b.entries.find(x=>x.id===entryId);
+  entry.orders[oi].done=!entry.orders[oi].done;
+  save(); renderAll(); renderExportModal();
+}
+function buildProgressText(b,entry,dn){
+  if(!entry)return'（今日暂无查房记录）';
+  const ds=entry.date.replace(/-/g,'/');
+  const ordersText=entry.orders.length
+    ?'\n\n【处理】\n'+entry.orders.map(o=>(o.done?'[已执行] ':'[待执行] ')+o.text).join('\n')
+    :'';
+  return `入院第${dn}天（${ds}${entry.time?' '+entry.time:''}）\n\n【病情变化】\n${entry.condition}${ordersText}`;
+}
+function copyProgress(){
+  const text=document.getElementById('exp-progress-box').textContent;
+  navigator.clipboard&&navigator.clipboard.writeText(text).then(()=>{
+    const btn=document.querySelector('#m-export .copy-btn');
+    btn.textContent='已复制 ✓';
+    setTimeout(()=>btn.innerHTML=`<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="4" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M4 4V2.5A1.5 1.5 0 015.5 1H11.5A1.5 1.5 0 0113 2.5V8.5A1.5 1.5 0 0111.5 10H10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>复制病程文本`,1800);
+  });
+}
+
+function renderExport(){
+  const sorted=[...beds].sort((a,b)=>({r:0,y:1,g:2}[a.risk]-{r:0,y:1,g:2}[b.risk]));
+  const withRecord=sorted.filter(b=>b.entries.find(e=>e.date===TODAY));
+  const noRecord=sorted.filter(b=>!b.entries.find(e=>e.date===TODAY));
+  const el=document.getElementById('export-list');
+  let html='';
+  if(!beds.length){html='<div class="empty-state"><div class="empty-icon">📋</div><div>暂无床位数据</div></div>';}
+  withRecord.forEach(b=>{
+    const entry=b.entries.find(e=>e.date===TODAY);
+    const pending=entry.orders.filter(o=>!o.done).length;
+    const done=entry.orders.filter(o=>o.done).length;
+    html+=`<div class="export-card" onclick="openExport(${b.id},{stopPropagation:()=>{}})">
+      <div class="export-card-top">
+        <span class="tag ${riskTagCls(b.risk)}">${b.num}床</span>
+        <span class="export-card-name">${escHtml(b.name)}</span>
+        <span class="tag tag-b" style="margin-left:auto;">查看导出</span>
+      </div>
+      <div class="export-card-meta">${escHtml(b.diag)} · 第${daysSince(b.admitDate)}天</div>
+      <div class="export-card-tags">
+        ${pending?`<span class="tag tag-y">${pending}条待执行</span>`:''}
+        ${done?`<span class="tag tag-g">${done}条已执行</span>`:''}
+        ${!pending&&!done?`<span class="tag tag-gray">无医嘱</span>`:''}
+      </div>
+    </div>`;
+  });
+  if(noRecord.length){
+    html+=`<div class="export-section-label">今日尚未记录</div>`;
+    noRecord.forEach(b=>{
+      html+=`<div class="no-record-card">
+        <div class="no-record-info">
+          <div class="no-record-name">${escHtml(b.num)}床 ${escHtml(b.name)}</div>
+          <div class="no-record-sub">${escHtml(b.diag)}</div>
+        </div>
+        <button class="action-btn primary" onclick="openNoteNew(${b.id},{stopPropagation:()=>{}})">+ 记录</button>
+      </div>`;
+    });
+  }
+  el.innerHTML=html;
+}
+
+function renderAll(){renderBeds();updateStats();}
+renderAll();
+
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
