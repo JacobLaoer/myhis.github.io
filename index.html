@@ -609,16 +609,8 @@ html.theme-dark .theme-toggle .icon-moon { display: block; }
 @media (min-width: 900px) {
   .app-header { padding: 14px 24px 10px; }
   .tab-bar { padding: 0 24px; }
-  .stats-row { padding: 16px 24px; grid-template-columns: repeat(4, minmax(0,1fr)); }
-  .bed-list, .export-list, .todo-list {
-    padding: 0 24px 40px;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0,1fr));
-    gap: 12px;
-    align-items: start;
-  }
-  .bed-list > .empty-state, .export-list > .empty-state, .todo-list > .empty-state { grid-column: 1 / -1; }
-  .bed-card, .export-card, .no-record-card { margin-bottom: 0; }
+  .stats-row { padding: 16px 24px; }
+  .bed-list, .export-list, .todo-list { padding: 0 24px 40px; }
   .modal-sheet { max-width: 560px; }
   .backup-section { margin: 16px 24px 0; }
   .view-switch { margin: 16px 24px 0; }
